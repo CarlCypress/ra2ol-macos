@@ -3,6 +3,17 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - run: python scripts/check_commits.py --range HEAD
   python:
     runs-on: ubuntu-latest
     steps:
@@ -21,3 +32,10 @@ jobs:
       - run: python scripts/ra2ol.py build
       - run: dist/check-key-mapping dist/红警战网.app/Contents/Resources/ControlAsAlt.dylib
       - run: codesign --verify --strict dist/红警战网.app
+      - run: python scripts/package_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-preview-package
+          path: |
+            dist/release/*.zip
+            dist/release/SHA256SUMS.txt

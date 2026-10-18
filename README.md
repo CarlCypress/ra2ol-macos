@@ -19,11 +19,17 @@
 ## 准备条件
 
 1. Apple 芯片 Mac，已安装 Rosetta 2。Intel Mac 尚未实测。
-2. Python 3.9 或以上，以及 Xcode Command Line Tools。首次使用可执行 `xcode-select --install`，按系统提示完成。
+2. Python 3.9 或以上。源码安装或重新编译还需要 Xcode Command Line Tools，可执行 `xcode-select --install`，按系统提示完成。
 3. 网络连接和足够的磁盘空间。脚本会下载 Wine、GStreamer 和 Windows 战网安装器。
 4. 自行提供有权使用的游戏和中文字体。当前字体方案需要宋体、微软雅黑、新細明體和黑体对应的六个文件，见[安装说明](docs/setup.md)。
 
-## 从全新目录开始
+## 下载预览版
+
+在 [Releases](https://github.com/CarlCypress/ra2ol-macos/releases) 下载 `ra2ol-macos-<version>-universal.zip` 与 `SHA256SUMS.txt`。解压后阅读 `开始使用.md`，运行 `安装.command`。发布包内含预编译启动器，安装时无需 Xcode 编译工具；仍需要 Python、Rosetta、网络和自备字体。
+
+当前版本为 `0.1.0-alpha.1`，完整游戏稳定性和下载后首次打开流程仍需扩大验证。App 尚无 Developer ID 签名或 Apple 公证，可能需要按 macOS「隐私与安全性」提示允许打开。
+
+## 从源码开始
 
 在仓库根目录执行。将字体路径替换为你自己的目录：
 
@@ -73,6 +79,23 @@ python3 scripts/ra2ol.py --base "$HOME/RA2OLMac-test" doctor
 - [闪退 卡死与 Fatal Error](docs/troubleshooting.md)
 - [第三方组件与来源](THIRD_PARTY.md)
 - [开发和验证](CONTRIBUTING.md)
+- [版本与发布](docs/releasing.md)
+- [更新记录](CHANGELOG.md)
+
+## 仓库结构
+
+```text
+src/launcher/     macOS 启动器
+src/keyboard/     Wine 按键组件
+scripts/          环境管理、发布打包、提交检查
+tests/            Python 配置与打包回归测试
+tests/native/     原生按键测试
+packaging/        发布包安装入口与入门说明
+docs/             安装、设置、排错、版本发布说明
+.github/          自动检查、Release 工作流、PR 模板
+VERSION           统一版本号
+dependencies.json 固定依赖版本、来源与校验值
+```
 
 ## 项目边界
 

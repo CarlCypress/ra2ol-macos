@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag matching VERSION (for example v0.1.0-alpha.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: macos-14
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate tag and release notes
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          test "$RELEASE_TAG" = "v$(cat VERSION)"
+          test "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" = "$(git rev-parse HEAD)"
+          test -f "docs/releases/$RELEASE_TAG.md"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+      - run: python scripts/check_commits.py --range HEAD
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/package_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            dist/release/*.zip
+            dist/release/SHA256SUMS.txt
+            docs/releases/*.md
+          if-no-files-found: error
+
+  draft:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: artifacts
+      - name: Create draft release with verified assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.package.outputs.tag }}
+        run: |
+          flags=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" artifacts/dist/release/*.zip artifacts/dist/release/SHA256SUMS.txt \
+            --verify-tag --draft "${flags[@]}" --title "$RELEASE_TAG" \
+            --notes-file "artifacts/docs/releases/$RELEASE_TAG.md"

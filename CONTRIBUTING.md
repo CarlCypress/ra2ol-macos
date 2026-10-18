@@ -1,12 +1,39 @@
 # 开发与验证
 
+## 提交规范
+
+使用 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)：`type(scope): description`。标题不超过 100 个字符，scope 可省略，描述使用具体动词，正文解释原因和验证结果。每次提交围绕一个可独立理解的变更。
+
+| 前缀 | 用途 | 示例 |
+| --- | --- | --- |
+| `feat` | 新功能 | `feat(release): package portable macOS preview` |
+| `fix` | 修复行为 | `fix(launcher): expand runtime path for current user` |
+| `refactor` | 保持行为的结构调整 | `refactor: separate launcher and keyboard sources` |
+| `docs` | 文档 | `docs: explain preview installation` |
+| `test` | 测试 | `test(release): check portable app settings` |
+| `build` | 构建工具 | `build: centralize application version` |
+| `ci` | 自动化流程 | `ci: validate commits and build release drafts` |
+| `chore` | 仓库维护、版本 | `chore(release): prepare v0.1.0-alpha.1` |
+
+也接受 `perf` 和 `revert`。不兼容变更在冒号前加 `!`，并在正文解释 `BREAKING CHANGE:`。
+
+启用本地提交检查：
+
+```sh
+git config core.hooksPath .githooks
+```
+
+CI 会检查分支历史中的提交标题。PR 标题采用同样格式；合并时使用 squash 并核对最终提交信息。历史整理前保留可恢复备份，共享分支改写须先与协作者协调，使用带预期旧提交的 `--force-with-lease`。
+
 ## 本地检查
 
 ```sh
 python3 -m unittest discover -s tests -v
+python3 scripts/check_commits.py --range HEAD
 python3 scripts/ra2ol.py build
 dist/check-key-mapping dist/红警战网.app/Contents/Resources/ControlAsAlt.dylib
 codesign --verify --strict dist/红警战网.app
+python3 scripts/package_release.py
 ```
 
 测试覆盖配置继承、专用节覆盖、备份、缺失配置不写入、现有目录保护、下载校验、单模块提取和环境变量隔离。原生测试覆盖左右修饰键、组合和嵌套事件。
@@ -32,4 +59,4 @@ macOS 可分别用 `arch -arm64`、`arch -x86_64` 运行构建出的按键测试
 
 源码、文档、测试、依赖锁文件可以提交。`dist/`、`cache/`、运行前缀、账号配置、字体、游戏、DLL 和个人路径不提交。原型电脑的完整 Word 手册含本机路径，仓库采用重新整理的通用 Markdown 文档。
 
-更换依赖前先解释触发问题、版本与校验来源，再在独立新目录验证。发布前还需扩大 Mac 型号、显示器、地图及模式的实测范围。
+更换依赖前先解释触发问题、版本与校验来源，再在独立新目录验证。当前按预览版发布，正式版前还需扩大 Mac 型号、显示器、地图及模式的实测范围。发布步骤和打包内容见 [版本与发布](docs/releasing.md)。
