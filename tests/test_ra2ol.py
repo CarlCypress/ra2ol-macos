@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import io
 from pathlib import Path
+import plistlib
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -87,6 +88,27 @@ class ArchiveTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.dict(ra2ol.LOCK, wow64cpu=spec), patch.object(ra2ol, 'RemoteZip', return_value=io.BytesIO(buffer.getvalue())):
             with self.assertRaises(ValueError): ra2ol.fetch_wow64cpu(Path(temp))
             self.assertFalse((Path(temp) / 'wow64cpu.dll').exists())
+
+
+class ReleaseSettingsTests(unittest.TestCase):
+    def test_default_settings_resolve_for_another_account(self):
+        with tempfile.TemporaryDirectory() as temp:
+            app = Path(temp) / 'launcher.app'
+            (app / 'Contents/Resources').mkdir(parents=True)
+            with patch.object(Path, 'home', return_value=Path('/Users/builder')):
+                ra2ol.write_app_settings(app, Path('/Users/builder/RA2OLMac'))
+            settings = plistlib.loads((app / 'Contents/Resources/settings.plist').read_bytes())
+            with patch.dict('os.environ', HOME='/Users/player'):
+                self.assertEqual(Path(settings['baseDirectory']).expanduser(), Path('/Users/player/RA2OLMac'))
+
+    def test_custom_environment_remains_explicit(self):
+        with tempfile.TemporaryDirectory() as temp:
+            app = Path(temp) / 'launcher.app'
+            (app / 'Contents/Resources').mkdir(parents=True)
+            base = Path(temp) / 'custom-runtime'
+            ra2ol.write_app_settings(app, base)
+            settings = plistlib.loads((app / 'Contents/Resources/settings.plist').read_bytes())
+            self.assertEqual(settings['baseDirectory'], str(base))
 
 
 if __name__ == '__main__': unittest.main()

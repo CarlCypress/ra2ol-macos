@@ -1,5 +1,11 @@
 # 安装与恢复
 
+## 预编译包与源码
+
+Release 的 universal ZIP 包含预编译启动器，可运行 `安装.command` 或相同的 `setup` 命令。源码仓库中的 `setup` 会编译启动器，需要 Xcode Command Line Tools；发布包会复用内置 App，无需编译工具。两种方式都需要 Python 3.9+、Rosetta 2、自备字体和网络。
+
+默认 App 将 `~/RA2OLMac` 按运行它的当前用户展开。`--base` 使用其他目录时，安装工具会将该目录写入生成 App 并重新进行本地临时签名。该 App 用于指定目录，迁移后需要重新生成。
+
 ## 运行链路
 
 原生启动器 → 私有 Wine → Windows 战网 → 游戏。Rosetta 2 在 Apple 芯片上转换 Intel 代码，GStreamer 提供多媒体支持。通过独立 `WINEPREFIX` 隔离注册表、游戏和字体。
@@ -23,10 +29,10 @@ SimHei.ttf
 
 ## setup 做了什么
 
-1. 检查目标目录尚不存在、字体齐全且本机有编译工具。
+1. 检查目标目录尚不存在、字体齐全；源码安装还会检查编译工具。
 2. 下载固定安装包，或复用 `cache/` 内校验匹配的文件。
 3. 单独提取并校验带 Rosetta 修复的 `wow64cpu.dll`。
-4. 编译原生 App 与按键动态库。
+4. 源码安装编译原生 App 与按键动态库；发布包安装复制内置 App 并设置运行目录。
 5. 在临时目录解包 Wine 和 GStreamer，创建私有运行环境；不运行全局 pkg 安装程序。
 6. 保存原 Wine 模块和来源记录后，放入经过校验的修复模块。
 7. 创建独立 Windows 环境，设置 Wine 的 Command/Option 映射，复制和登记字体。

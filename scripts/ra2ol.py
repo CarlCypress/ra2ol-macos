@@ -22,6 +22,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = json.loads((ROOT / 'dependencies.json').read_text())
+VERSION = (ROOT / 'VERSION').read_text().strip()
 REL_WINE = Path('runtime/Wine Stable.app/Contents/Resources/wine')
 REL_DLL = REL_WINE / 'lib/wine/x86_64-windows/wow64cpu.dll'
 GAME_SECTIONS = ('ddraw', 'gamemd', 'gamemd-ares', 'gamemd-spawn')
@@ -150,15 +151,38 @@ def build(output, base):
     flags = ['xcrun', 'clang', '-arch', 'arm64', '-arch', 'x86_64', '-fobjc-arc', '-framework', 'Cocoa']
     run([*flags, '-dynamiclib', ROOT / 'src/keyboard/ControlAsAlt.m', '-o', resources / 'ControlAsAlt.dylib'])
     run([*flags, ROOT / 'src/launcher/Launcher.m', '-o', binary / 'RA2OL'])
+    numeric_version = VERSION.split('-')[0]
     info = dict(CFBundleName='红警战网', CFBundleDisplayName='红警战网',
-                CFBundleIdentifier='io.github.ra2ol-macos.launcher', CFBundleVersion='0.1.0',
+                CFBundleIdentifier='io.github.ra2ol-macos.launcher', CFBundleVersion=numeric_version,
+                CFBundleShortVersionString=numeric_version, RA2OLReleaseVersion=VERSION,
                 CFBundlePackageType='APPL', CFBundleExecutable='RA2OL', NSHighResolutionCapable=True)
     (app / 'Contents/Info.plist').write_bytes(plistlib.dumps(info))
-    (resources / 'settings.plist').write_bytes(plistlib.dumps({'baseDirectory': str(base)}))
+    write_app_settings(app, base)
     run(['/usr/bin/codesign', '--force', '--sign', '-', resources / 'ControlAsAlt.dylib'])
     run(['/usr/bin/codesign', '--force', '--sign', '-', app])
     run([*flags, ROOT / 'tests/native/check-key-mapping.m', '-o', output / 'check-key-mapping'])
     print('已构建:', app)
+    return app
+
+
+def write_app_settings(app, base):
+    # Keep the default portable across user accounts; custom environments remain explicit.
+    value = '~/RA2OLMac' if base == Path.home() / 'RA2OLMac' else str(base)
+    (app / 'Contents/Resources/settings.plist').write_bytes(plistlib.dumps({'baseDirectory': value}))
+
+
+def prepare_launcher(output, base):
+    bundled = ROOT / '红警战网.app'
+    if not bundled.is_dir():
+        return build(output, base)
+    run(['/usr/bin/codesign', '--verify', '--strict', bundled])
+    app = output / bundled.name
+    output.mkdir(parents=True, exist_ok=True)
+    if app.resolve() == bundled.resolve():
+        raise ValueError('输出目录不能覆盖发布包自带的启动器')
+    run(['/usr/bin/ditto', bundled, app])
+    write_app_settings(app, base)
+    run(['/usr/bin/codesign', '--force', '--sign', '-', app])
     return app
 
 
@@ -171,12 +195,13 @@ def setup(args):
         raise ValueError('请用 --fonts-dir 指定你有权使用的中文字体目录，参见 docs/setup.md')
     # Check fonts and toolchain before any downloads or target-directory writes.
     font_files(args.fonts_dir)
-    run(['xcrun', '--find', 'clang'])
+    if not (ROOT / '红警战网.app').is_dir():
+        run(['xcrun', '--find', 'clang'])
     wine_archive = fetch('wine', cache)
     gst_archive = fetch('gstreamer', cache)
     installer = fetch('installer', cache)
     module = fetch_wow64cpu(cache)
-    app = build(args.output, base)
+    app = prepare_launcher(args.output, base)
     base.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.ra2ol-prepare-', dir=base.parent) as temp:
         stage = Path(temp)
@@ -210,7 +235,7 @@ def setup(args):
         (diagnostics / 'provenance.json').write_text(json.dumps(LOCK['wow64cpu'], indent=2))
         (ready / 'installers').mkdir()
         shutil.copy2(installer, ready / 'installers/ra2ol-legacy-setup.exe')
-        (ready / '.ra2ol-macos').write_text('0.1.0\n')
+        (ready / '.ra2ol-macos').write_text(VERSION + '\n')
         # Another process might create the destination while downloads are running.
         if base.exists(): raise FileExistsError('目标目录刚刚被创建，拒绝覆盖')
         ready.rename(base)
@@ -368,6 +393,7 @@ def doctor(base):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--version', action='version', version=VERSION)
     parser.add_argument('--base', type=lambda p: Path(p).expanduser().resolve(), default=Path.home() / 'RA2OLMac')
     commands = parser.add_subparsers(dest='command', required=True)
     for name in ['build', 'setup']:
