@@ -148,8 +148,8 @@ def build(output, base):
     binary.mkdir(parents=True, exist_ok=True)
     resources.mkdir(parents=True, exist_ok=True)
     flags = ['xcrun', 'clang', '-arch', 'arm64', '-arch', 'x86_64', '-fobjc-arc', '-framework', 'Cocoa']
-    run([*flags, '-dynamiclib', ROOT / 'src/ControlAsAlt.m', '-o', resources / 'ControlAsAlt.dylib'])
-    run([*flags, ROOT / 'src/Launcher.m', '-o', binary / 'RA2OL'])
+    run([*flags, '-dynamiclib', ROOT / 'src/keyboard/ControlAsAlt.m', '-o', resources / 'ControlAsAlt.dylib'])
+    run([*flags, ROOT / 'src/launcher/Launcher.m', '-o', binary / 'RA2OL'])
     info = dict(CFBundleName='红警战网', CFBundleDisplayName='红警战网',
                 CFBundleIdentifier='io.github.ra2ol-macos.launcher', CFBundleVersion='0.1.0',
                 CFBundlePackageType='APPL', CFBundleExecutable='RA2OL', NSHighResolutionCapable=True)
@@ -157,7 +157,7 @@ def build(output, base):
     (resources / 'settings.plist').write_bytes(plistlib.dumps({'baseDirectory': str(base)}))
     run(['/usr/bin/codesign', '--force', '--sign', '-', resources / 'ControlAsAlt.dylib'])
     run(['/usr/bin/codesign', '--force', '--sign', '-', app])
-    run([*flags, ROOT / 'tests/check-key-mapping.m', '-o', output / 'check-key-mapping'])
+    run([*flags, ROOT / 'tests/native/check-key-mapping.m', '-o', output / 'check-key-mapping'])
     print('已构建:', app)
     return app
 
