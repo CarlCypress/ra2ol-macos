@@ -1,5 +1,7 @@
 # ra2ol-macos
 
+**简体中文** | [English](README.en.md)
+
 在 Apple 芯片 Mac 上，通过专用 Wine 环境运行 [ra2ol 红警战网](https://www.ra2ol.com/)和红色警戒 2。
 
 这是从一台 MacBook Air M3 的实际配置整理出来的 **实验性项目**。包含可编译的 macOS 启动器、依赖准备脚本、Command/Control 映射、大窗口配置和排错记录。当前验证范围为 macOS 15.7.4、Wine Stable 11.0_1；其他系统和平台版本需要重新验证。
