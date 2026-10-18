@@ -1,0 +1,25 @@
+{
+  "wine": {
+    "version": "11.0_1",
+    "filename": "wine-stable-11.0_1-osx64.tar.xz",
+    "url": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.0_1/wine-stable-11.0_1-osx64.tar.xz",
+    "sha256": "b50dc50ec7f41d58b115a6b685d4d1315ba3c797bd3aa0f49213f2703cb82388"
+  },
+  "gstreamer": {
+    "version": "1.28.6",
+    "filename": "gstreamer-1.0-1.28.6-universal.pkg",
+    "url": "https://gstreamer.freedesktop.org/data/pkg/osx/1.28.6/gstreamer-1.0-1.28.6-universal.pkg",
+    "sha256": "a8eb366c59b7e9e5dc049848fed6bcd203a8878aa7517c051639fda78797c6ad"
+  },
+  "installer": {
+    "filename": "ra2ol-legacy-setup.exe",
+    "url": "https://ndown2.ra2ol.com/np0118.exe",
+    "sha256": "ac33452103c6a5b34802ecdd48ba7e3f187362ba1c772c3521ffb5263521ce57"
+  },
+  "wow64cpu": {
+    "version": "CrossOver 26.3.0 Wine component",
+    "url": "https://media.codeweavers.com/pub/crossover/cxmac/demo/crossover-26.3.0.zip",
+    "member": "CrossOver.app/Contents/SharedSupport/CrossOver/lib/wine/x86_64-windows/wow64cpu.dll",
+    "sha256": "c425bf385429d6dfd2b1aa033d93c51c03a587045f1b64ec702cb4f6c6599263"
+  }
+}
